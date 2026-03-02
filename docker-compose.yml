@@ -13,18 +13,36 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - dynamodb-local
+      mariadb:
+        condition: service_healthy
     environment:
+      - DATABASE_URL=mysql+pymysql://tczewik:tczewik@mariadb:3306/tczewik
       - AWS_ACCESS_KEY_ID=local
       - AWS_SECRET_ACCESS_KEY=local
-      - AWS_DEFAULT_REGION=us-east-1
-      - DYNAMODB_ENDPOINT=http://dynamodb-local:8000
-      - AUTH_USERS=[{"username":"admin","password":"admin"}]
-      - SECRET_KEY=dev-secret-key-change-in-production
+      - AWS_DEFAULT_REGION=eu-central-1
+      - SECRET_KEY=zmien-mnie-przed-wdrozeniem
       - TZ=Europe/Warsaw
+      - ADMIN_LOGIN=admin
+      - ADMIN_PASSWORD=admin123
+      # - REPORTS_S3_BUCKET=nazwa-twojego-bucketa
 
-  dynamodb-local:
-    image: amazon/dynamodb-local:latest
+  mariadb:
+    image: mariadb:11
     ports:
-      - "8001:8000"
-    command: "-jar DynamoDBLocal.jar -sharedDb -inMemory"
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_DATABASE=tczewik
+      - MYSQL_USER=tczewik
+      - MYSQL_PASSWORD=tczewik
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 10s
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  mariadb_data:
