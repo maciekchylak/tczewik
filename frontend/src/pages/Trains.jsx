@@ -1,6 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { getTrainDepartures } from '../api/schedules'
 import './Schedule.css'
+
+// ── Moduł-level cache — przetrwa nawigację między stronami ────────────────────
+// Dzięki temu przy powrocie na stronę dane są od razu widoczne,
+// a fetch odbywa się w tle i aktualizuje widok gdy skończy.
+const _cache = { data: [], time: null }
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function DelayBadge({ minutes }) {
   if (minutes === null || minutes === undefined) return null
@@ -10,24 +17,53 @@ function DelayBadge({ minutes }) {
   return <span className="delay-badge delay-high">+{minutes} min</span>
 }
 
-export default function Trains() {
-  const [departures, setDepartures] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [lastRefresh, setLastRefresh] = useState(null)
-  const [error, setError] = useState(null)
+// ── Komponent ─────────────────────────────────────────────────────────────────
 
-  const fetchData = (isRefresh = false) => {
-    if (!isRefresh) setLoading(true)
-    setError(null)
-    getTrainDepartures()
-      .then(data => { setDepartures(data); setLastRefresh(new Date()) })
-      .catch(e => setError(e.message))
-      .finally(() => setLoading(false))
-  }
+export default function Trains() {
+  // Inicjalizacja z cache — przy powrocie na stronę dane są od razu.
+  const [departures, setDepartures]   = useState(_cache.data)
+  const [lastRefresh, setLastRefresh] = useState(_cache.time)
+  const [initialLoading, setInitialLoading] = useState(_cache.data.length === 0)
+  const [refreshing, setRefreshing]   = useState(false)
+  const [error, setError]             = useState(null)
+  const mountedRef = useRef(true)
 
   useEffect(() => {
-    fetchData(false)
-    const interval = setInterval(() => fetchData(true), 120_000)
+    mountedRef.current = true
+    return () => { mountedRef.current = false }
+  }, [])
+
+  useEffect(() => {
+    const fetchData = () => {
+      // Jeśli mamy dane z cache — oznacz jako odświeżanie w tle (bez blokowania UI).
+      // Jeśli nie ma danych — pokaż pełne ładowanie.
+      if (_cache.data.length > 0) {
+        setRefreshing(true)
+      }
+
+      getTrainDepartures()
+        .then(data => {
+          if (!mountedRef.current) return
+          _cache.data = data
+          _cache.time = new Date()
+          setDepartures(data)
+          setLastRefresh(_cache.time)
+          setError(null)
+        })
+        .catch(e => {
+          if (!mountedRef.current) return
+          // Pokaż błąd tylko gdy nie mamy żadnych danych do wyświetlenia.
+          if (_cache.data.length === 0) setError(e.message)
+        })
+        .finally(() => {
+          if (!mountedRef.current) return
+          setInitialLoading(false)
+          setRefreshing(false)
+        })
+    }
+
+    fetchData()
+    const interval = setInterval(fetchData, 120_000)
     return () => clearInterval(interval)
   }, [])
 
@@ -40,19 +76,25 @@ export default function Trains() {
           <h1 className="page-title">Odjazdy pociągów</h1>
           <p className="page-subtitle">Ze stacji Tczew — dzisiaj</p>
         </div>
-        {lastRefresh && (
-          <span className="refresh-info">
-            Odświeżono: {lastRefresh.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}
-          </span>
-        )}
+        <div className="refresh-status">
+          {refreshing && <span className="refreshing-dot" title="Aktualizowanie…" />}
+          {lastRefresh && (
+            <span className="refresh-info">
+              {lastRefresh.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="panel">
-        {loading && departures.length === 0 && (
+        {initialLoading && (
           <div className="panel-loading">Ładowanie danych PKP…</div>
         )}
         {error && departures.length === 0 && (
-          <div className="panel-error">⚠️ {error}</div>
+          <div className="panel-error">
+            ⚠️ {error}
+            <div className="panel-error-hint">Backend ponawia próbę automatycznie co 5 minut.</div>
+          </div>
         )}
 
         {departures.length > 0 && (
@@ -90,7 +132,7 @@ export default function Trains() {
           </table>
         )}
 
-        {!loading && !error && departures.length === 0 && (
+        {!initialLoading && !error && departures.length === 0 && (
           <div className="panel-empty">Brak danych o pociągach na dziś.</div>
         )}
       </div>

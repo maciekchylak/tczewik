@@ -5,7 +5,7 @@ import re
 import threading
 import time as time_module
 import zipfile
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 import requests
 
@@ -305,3 +305,54 @@ rt_updates = RTUpdates()
 def load_all():
     bus_data.load()
     train_data.load()
+
+
+def reload_loop():
+    """
+    Background thread — zastępuje jednorazowe load_all():
+    - Ładuje dane przy starcie.
+    - Przy błędzie: ponawia próbę co 5 minut.
+    - Po sukcesie: czeka do północy i przeładowuje (rozkłady są dzienne).
+    """
+    RETRY_DELAY = 5 * 60      # 5 minut między kolejnymi próbami przy błędzie
+    MIDNIGHT_BUFFER = 90      # 90 sekund po północy (GDDKiA/GTFS zazwyczaj aktualizuje ~00:00)
+
+    while True:
+        if not bus_data.loaded:
+            bus_data.load()
+
+        if not train_data.loaded:
+            train_data.load()
+
+        if not train_data.loaded:
+            logger.warning(
+                "Dane kolejowe niedostępne (%s) — ponowna próba za %d min.",
+                train_data.error, RETRY_DELAY // 60,
+            )
+            time_module.sleep(RETRY_DELAY)
+            train_data.error = None   # reset — pozwól load() spróbować od nowa
+            continue
+
+        if not bus_data.loaded:
+            logger.warning(
+                "Dane autobusowe niedostępne (%s) — ponowna próba za %d min.",
+                bus_data.error, RETRY_DELAY // 60,
+            )
+            time_module.sleep(RETRY_DELAY)
+            bus_data.error = None
+            continue
+
+        # Oba załadowane — uśpij do następnej północy.
+        now = datetime.now()
+        next_midnight = datetime.combine(now.date() + timedelta(days=1), datetime.min.time())
+        sleep_sec = (next_midnight - now).total_seconds() + MIDNIGHT_BUFFER
+        logger.info(
+            "Rozkłady załadowane. Następne przeładowanie za %.1f h.", sleep_sec / 3600
+        )
+        time_module.sleep(sleep_sec)
+
+        # Reset przed codziennym przeładowaniem.
+        train_data.loaded = False
+        train_data.error = None
+        bus_data.loaded = False
+        bus_data.error = None

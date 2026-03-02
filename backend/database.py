@@ -3,6 +3,7 @@ Połączenie z MariaDB przez SQLAlchemy.
 Tabele tworzone automatycznie przy starcie aplikacji (create_all).
 """
 import os
+from datetime import datetime
 from sqlalchemy import (
     Column, DateTime, Float, Integer, String, Text,
     create_engine, func,
@@ -55,6 +56,15 @@ class Vote(Base):
         # unikalność: jeden hash = jeden głos per zgłoszenie
         __import__("sqlalchemy").UniqueConstraint("report_id", "client_hash", name="uq_vote"),
     )
+
+
+class ApiCache(Base):
+    """Cache dla danych z zewnętrznych API (TTL zarządzany przez pollers)."""
+    __tablename__ = "api_cache"
+
+    key        = Column(String(100), primary_key=True)
+    data       = Column(Text, nullable=False)
+    fetched_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
 
 def init_db():

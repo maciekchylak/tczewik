@@ -15,7 +15,11 @@ export async function getBusDepartures(ids) {
 
 export async function getTrainDepartures() {
   const res = await fetch(`${BASE}/trains/departures`)
-  if (!res.ok) throw new Error('Błąd pobierania rozkładu pociągów')
+  if (!res.ok) {
+    let msg = 'Błąd pobierania rozkładu pociągów'
+    try { const b = await res.json(); if (b.detail) msg = b.detail } catch (_) {}
+    throw new Error(msg)
+  }
   return res.json()
 }
 

@@ -11,3 +11,9 @@ export async function getWaterLevel() {
   if (!res.ok) throw new Error('Błąd pobierania stanu wody')
   return res.json()
 }
+
+export async function getAirQuality() {
+  const res = await fetch(`${BASE}/air`);
+  if (!res.ok) throw new Error('Błąd pobierania jakości powietrza');
+  return res.json();
+}

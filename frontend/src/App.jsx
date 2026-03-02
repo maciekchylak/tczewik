@@ -4,6 +4,7 @@ import Buses from './pages/Buses.jsx'
 import Trains from './pages/Trains.jsx'
 import Events from './pages/Events.jsx'
 import Reports from './pages/Reports.jsx'
+import Alerts from './pages/Alerts.jsx'
 import Admin from './pages/Admin.jsx'
 import './App.css'
 
@@ -29,6 +30,7 @@ export default function App() {
           <NavLink to="/trains">Pociągi</NavLink>
           <NavLink to="/events">Wydarzenia</NavLink>
           <NavLink to="/reports">Zgłoszenia</NavLink>
+          <NavLink to="/alerts">Alerty</NavLink>
         </div>
       </nav>
       <main className="main-content">
@@ -38,6 +40,7 @@ export default function App() {
           <Route path="/trains" element={<Trains />} />
           <Route path="/events" element={<Events />} />
           <Route path="/reports" element={<Reports />} />
+          <Route path="/alerts" element={<Alerts />} />
         </Routes>
       </main>
     </div>

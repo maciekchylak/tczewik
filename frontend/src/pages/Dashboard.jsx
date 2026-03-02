@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getWeather, getWaterLevel } from '../api/city'
+import { getWeather, getWaterLevel, getAirQuality} from '../api/city'
 import './Dashboard.css'
 
 const WMO = {
@@ -192,6 +192,114 @@ function WaterWidget() {
   )
 }
 
+// GIOŚ indeks: 0=Bardzo dobry … 5=Bardzo zły
+const AIR_INDEX_STYLE = {
+  0: { color: '#16a34a', bg: '#f0fdf4' },
+  1: { color: '#65a30d', bg: '#f7fee7' },
+  2: { color: '#d97706', bg: '#fffbeb' },
+  3: { color: '#ea580c', bg: '#fff7ed' },
+  4: { color: '#dc2626', bg: '#fef2f2' },
+  5: { color: '#7c3aed', bg: '#f5f3ff' },
+}
+
+const POLLUTANT_LABEL = {
+  PYL:  'pyły (PM)',
+  PM10: 'PM10',
+  PM25: 'PM2.5',
+  NO2:  'NO₂',
+  O3:   'O₃',
+  SO2:  'SO₂',
+}
+
+function AirQualityWidget() {
+  const [data, setData] = useState(null)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    getAirQuality().then(setData).catch(e => setError(e.message))
+  }, [])
+
+  if (error) return <div className="widget-error">⚠️ {error}</div>
+  if (!data) return <div className="widget-loading">Ładowanie jakości powietrza…</div>
+
+  const style = AIR_INDEX_STYLE[data.index] ?? { color: '#94a3b8', bg: '#f8fafc' }
+  const pollutants = [
+    { key: 'pm10', label: 'PM10' },
+    { key: 'pm25', label: 'PM2.5' },
+    { key: 'no2',  label: 'NO₂' },
+    { key: 'o3',   label: 'O₃' },
+    { key: 'so2',  label: 'SO₂' },
+  ].filter(p => data[p.key] != null)
+
+  const criticalLabel = data.critical_pollutant
+    ? POLLUTANT_LABEL[data.critical_pollutant] ?? data.critical_pollutant
+    : null
+
+  return (
+    <div className="widget air-quality-widget">
+      <div className="widget-header">
+        <span className="widget-title">Jakość powietrza</span>
+        <span className="widget-source">GIOŚ</span>
+      </div>
+
+      <div className="air-quality-main">
+        <span
+          className="air-quality-badge"
+          style={{ background: style.bg, color: style.color }}
+        >
+          {data.category ?? 'Brak danych'}
+        </span>
+        {criticalLabel && (
+          <span className="air-quality-critical">Krytyczny: {criticalLabel}</span>
+        )}
+      </div>
+
+      {pollutants.length > 0 && (
+        <div className="air-pollutants">
+          {pollutants.map(p => {
+            const item = data[p.key]
+            const pct  = item.pct_of_norm ?? null
+            const barColor = pct == null ? '#94a3b8'
+              : pct > 100 ? '#dc2626'
+              : pct > 75  ? '#f59e0b'
+              : '#22c55e'
+            return (
+              <div key={p.key} className="air-pollutant-row">
+                <div className="air-pollutant-header">
+                  <span className="air-pollutant-name">{p.label}</span>
+                  <span className="air-pollutant-value">
+                    {item.value_ugm3 != null
+                      ? <><strong>{item.value_ugm3}</strong> µg/m³</>
+                      : <em>{item.category}</em>
+                    }
+                  </span>
+                  {item.norm_ugm3 && (
+                    <span className="air-pollutant-norm">
+                      norma {item.norm_ugm3} µg/m³
+                    </span>
+                  )}
+                </div>
+                {pct != null && (
+                  <div className="air-pollutant-bar-track">
+                    <div
+                      className="air-pollutant-bar-fill"
+                      style={{ width: `${Math.min(pct, 100)}%`, background: barColor }}
+                    />
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {data.updated && (
+        <div className="water-updated">{data.station} · {data.updated}</div>
+      )}
+    </div>
+  )
+}
+
 export default function Dashboard() {
   return (
     <div className="dashboard">
@@ -203,6 +311,7 @@ export default function Dashboard() {
       <div className="widgets-grid">
         <WeatherWidget />
         <WaterWidget />
+        <AirQualityWidget />
       </div>
     </div>
   )
