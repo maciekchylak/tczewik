@@ -1,0 +1,267 @@
+/* ── Dashboard layout ────────────────────────────────── */
+.dashboard { max-width: 1000px; }
+
+.dashboard-hero {
+  margin-bottom: 2rem;
+}
+
+.dashboard-hero h1 {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.3rem;
+}
+
+.dashboard-hero p {
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.widgets-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (max-width: 760px) {
+  .widgets-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Widget card ─────────────────────────────────────── */
+.widget {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.widget-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem 0.75rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.widget-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.widget-source {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  background: #f1f5f9;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+}
+
+.widget-loading {
+  padding: 2rem 1.25rem;
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.widget-error {
+  padding: 1rem 1.25rem;
+  color: #dc2626;
+  font-size: 0.85rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  margin: 0.75rem;
+}
+
+/* ── Weather ─────────────────────────────────────────── */
+.weather-current {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+}
+
+.weather-icon {
+  font-size: 3rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.weather-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.weather-temp {
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.weather-label {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.weather-details {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.82rem;
+  color: #64748b;
+  text-align: right;
+}
+
+/* ── Expand button ───────────────────────────────────── */
+.expand-btn {
+  width: 100%;
+  padding: 0.7rem 1.25rem;
+  background: #f8fafc;
+  border: none;
+  border-top: 1px solid #f1f5f9;
+  color: #2563eb;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.expand-btn:hover { background: #eff6ff; }
+
+/* ── 5-day forecast ──────────────────────────────────── */
+.forecast-grid {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid #f1f5f9;
+}
+
+.forecast-day {
+  display: grid;
+  grid-template-columns: 44px 28px 1fr auto;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 1.25rem;
+  border-bottom: 1px solid #f8fafc;
+  font-size: 0.85rem;
+}
+
+.forecast-day:last-child { border-bottom: none; }
+.forecast-today { background: #eff6ff; }
+
+.forecast-day-name {
+  font-weight: 700;
+  color: #374151;
+  font-size: 0.8rem;
+}
+
+.forecast-icon { font-size: 1.2rem; }
+
+.forecast-label {
+  color: #64748b;
+  font-size: 0.78rem;
+}
+
+.forecast-temps {
+  display: flex;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.temp-max { font-weight: 700; color: #0f172a; }
+.temp-min { color: #94a3b8; }
+
+.forecast-precip {
+  grid-column: 4;
+  font-size: 0.72rem;
+  color: #3b82f6;
+}
+
+/* ── Water level ─────────────────────────────────────── */
+.water-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.25rem 0.75rem;
+  gap: 1rem;
+}
+
+.water-level {
+  font-size: 2.6rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.water-level small {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #64748b;
+  letter-spacing: 0;
+}
+
+.water-status-badge {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+/* ── Water gauge ─────────────────────────────────────── */
+.water-gauge-wrap {
+  padding: 0 1.25rem 0.75rem;
+}
+
+.water-gauge-track {
+  position: relative;
+  height: 10px;
+  background: #f1f5f9;
+  border-radius: 999px;
+  overflow: visible;
+  margin-bottom: 0.4rem;
+}
+
+.water-gauge-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.6s ease;
+}
+
+.gauge-marker {
+  position: absolute;
+  top: -4px;
+  width: 2px;
+  height: 18px;
+  background: #f59e0b;
+  border-radius: 1px;
+}
+
+.gauge-marker-alarm {
+  background: #dc2626;
+}
+
+.water-gauge-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.68rem;
+  color: #94a3b8;
+}
+
+.water-updated {
+  padding: 0.6rem 1.25rem 1rem;
+  font-size: 0.72rem;
+  color: #94a3b8;
+  border-top: 1px solid #f8fafc;
+}

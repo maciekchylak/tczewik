@@ -1,0 +1,301 @@
+/* ── Page layout ─────────────────────────────────────── */
+.schedule-page { max-width: 1400px; margin: 0 auto; }
+
+.schedule-page-header { margin-bottom: 1.5rem; }
+.schedule-page-header h1 { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em; }
+.schedule-page-header p  { color: #64748b; font-size: 0.9rem; margin-top: 0.25rem; }
+
+.panels-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .panels-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Card / Panel ────────────────────────────────────── */
+.panel {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 1.1rem 1.4rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.bus-header   { background: #f0f9ff; }
+.train-header { background: #faf5ff; }
+
+.panel-icon { font-size: 1.8rem; line-height: 1; }
+
+.panel-header h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 0.1rem;
+}
+
+.panel-header p {
+  color: #94a3b8;
+  font-size: 0.78rem;
+}
+
+/* ── Map ─────────────────────────────────────────────── */
+.bus-map {
+  height: 420px;
+  width: 100%;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+/* ── Stop search ─────────────────────────────────────── */
+.stop-search-wrap {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.stop-search {
+  width: 100%;
+  padding: 0.55rem 0.9rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  color: #0f172a;
+  font-size: 0.88rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.stop-search:focus {
+  outline: none;
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px #dbeafe;
+  background: #fff;
+}
+
+/* ── Stop list ───────────────────────────────────────── */
+.stop-list {
+  max-height: 220px;
+  overflow-y: auto;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.stop-list::-webkit-scrollbar { width: 4px; }
+.stop-list::-webkit-scrollbar-track { background: #f8fafc; }
+.stop-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+.stop-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.5rem 1rem;
+  background: none;
+  border: none;
+  color: #334155;
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.1s;
+  border-left: 3px solid transparent;
+}
+
+.stop-item:hover  { background: #f8fafc; }
+.stop-item.active {
+  background: #eff6ff;
+  border-left-color: #2563eb;
+  color: #1e40af;
+  font-weight: 500;
+}
+
+.stop-code {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #2563eb;
+  background: #dbeafe;
+  border-radius: 4px;
+  padding: 0.1rem 0.4rem;
+  white-space: nowrap;
+}
+
+.stop-name { flex: 1; }
+
+/* ── Departures section ──────────────────────────────── */
+.departures-section {
+  padding: 1rem 1.25rem 1.25rem;
+}
+
+.deps-title {
+  font-size: 0.82rem;
+  color: #64748b;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.deps-title strong { color: #0f172a; }
+.deps-code { color: #2563eb; }
+
+/* ── Table ───────────────────────────────────────────── */
+.deps-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.deps-table th {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #94a3b8;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.deps-table td {
+  padding: 0.85rem 0.75rem;
+  border-bottom: 1px solid #e2e8f0;
+  vertical-align: middle;
+}
+
+.deps-table tbody tr:last-child td { border-bottom: none; }
+.deps-table tbody tr:hover td      { background: #f8fafc; }
+
+.trains-full-table {
+  margin: 0 1.25rem 1.25rem;
+  width: calc(100% - 2.5rem);
+}
+
+/* Next upcoming */
+tr.next td          { background: #eff6ff; }
+tr.next:hover td    { background: #dbeafe; }
+tr.next .t-time     { color: #2563eb; font-size: 1.05rem; }
+
+/* Already departed */
+tr.row-departed td  { opacity: 0.4; }
+tr.row-departed .t-time { text-decoration: line-through; color: #94a3b8; }
+
+/* ── Table cells ─────────────────────────────────────── */
+.t-time {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #0f172a;
+  white-space: nowrap;
+  width: 64px;
+}
+
+.t-route  { color: #7c3aed; font-weight: 600; }
+.t-headsign { color: #475569; }
+
+.t-number {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  color: #7c3aed;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.train-name-sub {
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.t-route-train {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.t-headsign-main { color: #1e293b; font-weight: 500; }
+.t-route-sub     { font-size: 0.73rem; color: #94a3b8; }
+
+/* ── Operator badge ──────────────────────────────────── */
+.operator-badge {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.2rem 0.45rem;
+  border-radius: 5px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+/* ── Delay badges ────────────────────────────────────── */
+.delay-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.2rem 0.45rem;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+
+.delay-ok      { background: #dcfce7; color: #15803d; }
+.delay-low     { background: #fef9c3; color: #a16207; }
+.delay-mid     { background: #ffedd5; color: #c2410c; }
+.delay-high    { background: #fee2e2; color: #dc2626; }
+.delay-unknown { background: #f1f5f9; color: #94a3b8; }
+
+/* ── Trains page header ──────────────────────────────── */
+.trains-page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 1.75rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.trains-page-header .page-title,
+.trains-page-header .page-subtitle {
+  margin-bottom: 0;
+}
+
+.trains-page-header .page-subtitle { margin-top: 0.25rem; }
+
+.refresh-info {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  background: #f1f5f9;
+  padding: 0.3rem 0.7rem;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+/* ── States ──────────────────────────────────────────── */
+.panel-loading {
+  padding: 1.25rem 1.5rem;
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.panel-error {
+  margin: 1rem 1.25rem;
+  padding: 0.75rem 1rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #dc2626;
+  font-size: 0.85rem;
+}
+
+.panel-empty {
+  padding: 1.25rem 1.5rem;
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
