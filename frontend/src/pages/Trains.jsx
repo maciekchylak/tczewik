@@ -93,7 +93,7 @@ export default function Trains() {
     }
 
     fetchData()
-    const interval = setInterval(fetchData, 30_000)
+    const interval = setInterval(fetchData, 120_000)
     return () => clearInterval(interval)
   }, [])
 

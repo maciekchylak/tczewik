@@ -1,6 +1,16 @@
 import { useEffect, useState } from 'react'
-import { getWeather, getWaterLevel, getAirQuality} from '../api/city'
+import { useNavigate } from 'react-router'
+import { getWeather, getWaterLevel, getAirQuality } from '../api/city'
+import { getBusStops, getBusDepartures, getTrainDepartures } from '../api/schedules'
 import './Dashboard.css'
+
+const STOPS_KEY = 'tczewik_bus_stops'
+
+const TRAIN_CAT_COLOR = {
+  IC: '#c0392b', EIC: '#922b21', EIP: '#6e1f18',
+  TLK: '#1a5276', EC: '#1a5276', EN: '#154360',
+  RE: '#1d6a4a', R: '#196f3d',
+}
 
 const WMO = {
   0:  ['☀️', 'Bezchmurnie'],
@@ -300,6 +310,214 @@ function AirQualityWidget() {
   )
 }
 
+// ── Widget autobusów ──────────────────────────────────────────────────────────
+
+function BusWidget() {
+  const navigate = useNavigate()
+
+  // [stopTam, stopPowrot] — każdy: null | {name, ids}
+  const [stops, setStops] = useState(() => {
+    try {
+      const s = JSON.parse(localStorage.getItem(STOPS_KEY))
+      return Array.isArray(s) && s.length === 2 ? s : [null, null]
+    } catch { return [null, null] }
+  })
+  const [allStops, setAllStops] = useState([])
+  const [search, setSearch]     = useState('')
+  const [picking, setPicking]   = useState(null) // null | 0 | 1
+  const [deps, setDeps]         = useState([[], []])
+
+  // Lista przystanków — pobierz raz gdy otworzono picker
+  useEffect(() => {
+    if (picking === null || allStops.length > 0) return
+    getBusStops().then(setAllStops).catch(() => {})
+  }, [picking, allStops.length])
+
+  // Odjazdy — odświeżaj co 30 s gdy któryś przystanek jest ustawiony
+  useEffect(() => {
+    const fetchSlot = (idx) => {
+      const s = stops[idx]
+      if (!s) return Promise.resolve([])
+      return getBusDepartures(s.ids).then(d => d.slice(0, 3)).catch(() => [])
+    }
+    const run = () => Promise.all([fetchSlot(0), fetchSlot(1)]).then(setDeps)
+    run()
+    const id = setInterval(run, 30_000)
+    return () => clearInterval(id)
+  }, [stops])
+
+  const openPicker = (idx) => { setSearch(''); setPicking(idx) }
+  const closePicker = () => { setPicking(null); setSearch('') }
+
+  const selectStop = (s) => {
+    const saved = { name: s.name, ids: s.ids.join(',') }
+    const next = [...stops]
+    next[picking] = saved
+    localStorage.setItem(STOPS_KEY, JSON.stringify(next))
+    setStops(next)
+    const nextDeps = [...deps]; nextDeps[picking] = []
+    setDeps(nextDeps)
+    closePicker()
+  }
+
+  // ── Picker ─────────────────────────────────────────────
+  if (picking !== null) {
+    const filtered = allStops.filter(s =>
+      !search || s.name.toLowerCase().includes(search.toLowerCase())
+    )
+    return (
+      <div className="widget">
+        <div className="widget-header">
+          <span className="widget-title">
+            🚌 {picking === 0 ? 'Przystanek — tam' : 'Przystanek — z powrotem'}
+          </span>
+          <button className="widget-close-btn" onClick={closePicker}>✕</button>
+        </div>
+        <div className="quick-search-wrap">
+          <input
+            className="quick-search"
+            placeholder="Szukaj przystanku…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            autoFocus
+          />
+        </div>
+        <div className="quick-stop-list">
+          {allStops.length === 0 && <div className="widget-loading">Ładowanie przystanków…</div>}
+          {filtered.slice(0, 25).map(s => (
+            <button key={s.name} className="quick-stop-item" onClick={() => selectStop(s)}>
+              {s.name}
+            </button>
+          ))}
+          {allStops.length > 0 && filtered.length === 0 && (
+            <div className="quick-stop-empty">Brak wyników</div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // ── Dwa sloty ──────────────────────────────────────────
+  const Slot = ({ idx, label }) => {
+    const stop     = stops[idx]
+    const slotDeps = deps[idx]
+    return (
+      <div className="bus-slot">
+        <div className="bus-slot-header">
+          <span className="bus-slot-label">{label}</span>
+          <button className="widget-stop-btn" onClick={() => openPicker(idx)}>
+            {stop ? stop.name : 'Ustaw →'}
+          </button>
+        </div>
+        {!stop && (
+          <div className="bus-slot-empty">
+            <button className="transport-pick-btn" onClick={() => openPicker(idx)}>
+              Wybierz przystanek
+            </button>
+          </div>
+        )}
+        {stop && slotDeps.length === 0 && (
+          <div className="widget-loading">Brak odjazdów</div>
+        )}
+        {slotDeps.length > 0 && (
+          <div className="transport-deps">
+            {slotDeps.map((d, i) => (
+              <div key={i} className="transport-dep-row">
+                <span className="transport-dep-time">{d.time}</span>
+                <span className="transport-dep-route">{d.route}</span>
+                <span className="transport-dep-head">{d.headsign}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div className="widget widget-full">
+      <div className="widget-header">
+        <span className="widget-title">🚌 Autobusy</span>
+        <button className="widget-nav-btn" onClick={() => navigate('/buses')}>
+          Pełny rozkład →
+        </button>
+      </div>
+      <div className="bus-slots">
+        <Slot idx={0} label="Tam →" />
+        <div className="bus-slot-divider" />
+        <Slot idx={1} label="← Z powrotem" />
+      </div>
+    </div>
+  )
+}
+
+// ── Widget pociągów ───────────────────────────────────────────────────────────
+
+function TrainWidget() {
+  const navigate = useNavigate()
+  const [deps, setDeps]   = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    const fetch = () => {
+      getTrainDepartures()
+        .then(data => {
+          setDeps(data.filter(d => !d.departed).slice(0, 3))
+          setError(null)
+        })
+        .catch(e => setError(e.message))
+        .finally(() => setLoading(false))
+    }
+    fetch()
+    const id = setInterval(fetch, 120_000)
+    return () => clearInterval(id)
+  }, [])
+
+  return (
+    <div className="widget widget-full transport-widget" onClick={() => navigate('/trains')} role="button">
+      <div className="widget-header">
+        <span className="widget-title">🚆 Pociągi ze stacji Tczew</span>
+        <span className="widget-source">PKP PLK</span>
+      </div>
+
+      {loading && <div className="widget-loading">Ładowanie…</div>}
+      {error   && <div className="widget-error">⚠️ {error}</div>}
+      {!loading && !error && deps.length === 0 && (
+        <div className="widget-loading">Brak kolejnych odjazdów</div>
+      )}
+
+      {deps.length > 0 && (
+        <div className="train-deps-row">
+          {deps.map((d, i) => (
+            <div key={i} className="train-dep-card">
+              <div className="train-dep-card-time">{d.departure_time}</div>
+              <div className="train-dep-card-route">
+                {d.category && (
+                  <span
+                    className="transport-cat-badge"
+                    style={{ background: TRAIN_CAT_COLOR[d.category] ?? '#475569' }}
+                  >
+                    {d.category}
+                  </span>
+                )}
+                <span>{d.number}</span>
+              </div>
+              <div className="train-dep-card-dest">{d.destination || '—'}</div>
+              {d.platform && (
+                <div className="train-dep-card-platform">peron {d.platform}{d.track ? `, tor ${d.track}` : ''}</div>
+              )}
+              {d.delay_minutes > 0 && (
+                <div className="transport-dep-delay">+{d.delay_minutes} min</div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Dashboard() {
   return (
     <div className="dashboard">
@@ -311,6 +529,8 @@ export default function Dashboard() {
       <div className="widgets-grid">
         <WeatherWidget />
         <WaterWidget />
+        <BusWidget />
+        <TrainWidget />
         <AirQualityWidget />
       </div>
     </div>

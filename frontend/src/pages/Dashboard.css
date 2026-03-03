@@ -22,7 +22,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1.25rem;
-  align-items: start;
+  align-items: stretch;
 }
 
 @media (max-width: 760px) {
@@ -121,6 +121,13 @@
   text-align: right;
 }
 
+/* ── Weather widget — overlay dla prognozy ───────────── */
+.weather-widget {
+  overflow: visible;
+  position: relative;
+  z-index: 1;
+}
+
 /* ── Expand button ───────────────────────────────────── */
 .expand-btn {
   width: 100%;
@@ -134,15 +141,25 @@
   cursor: pointer;
   text-align: left;
   transition: background 0.15s;
+  border-radius: 0 0 15px 15px;
 }
 
 .expand-btn:hover { background: #eff6ff; }
 
-/* ── 5-day forecast ──────────────────────────────────── */
+/* ── 5-day forecast — absolute overlay ───────────────── */
 .forecast-grid {
   display: flex;
   flex-direction: column;
-  border-top: 1px solid #f1f5f9;
+  position: absolute;
+  top: 100%;
+  left: -1px;
+  right: -1px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-top: none;
+  border-radius: 0 0 16px 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  z-index: 20;
 }
 
 .forecast-day {
@@ -336,4 +353,282 @@
   height: 100%;
   border-radius: 99px;
   transition: width 0.4s ease;
+}
+
+/* ── Transport widgets (autobusy / pociągi) ──────────────────────────────── */
+
+.widget-full {
+  grid-column: 1 / -1;
+}
+
+.transport-widget {
+  cursor: pointer;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+.transport-widget:hover {
+  border-color: #c7d2fe;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+}
+
+.widget-stop-btn {
+  background: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.72rem;
+  color: #2563eb;
+  cursor: pointer;
+  white-space: nowrap;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.1s;
+  flex-shrink: 0;
+}
+
+.widget-stop-btn:hover { background: #eff6ff; }
+
+.widget-nav-btn {
+  background: none;
+  border: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #2563eb;
+  cursor: pointer;
+  padding: 0;
+  white-space: nowrap;
+}
+
+.widget-nav-btn:hover { text-decoration: underline; }
+
+/* ── Dwa sloty tam/z powrotem ─────────── */
+.bus-slots {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+}
+
+.bus-slot-divider {
+  width: 1px;
+  background: #f1f5f9;
+  margin: 0.5rem 0;
+}
+
+.bus-slot-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  padding: 0.55rem 0.9rem 0.4rem;
+}
+
+.bus-slot-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.bus-slot-empty {
+  padding: 1rem 0.9rem;
+  display: flex;
+  justify-content: center;
+}
+
+.widget-close-btn {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0 0.25rem;
+}
+
+/* Picker */
+.quick-search-wrap {
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.quick-search {
+  width: 100%;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  background: #f8fafc;
+  color: #0f172a;
+  box-sizing: border-box;
+}
+
+.quick-search:focus {
+  outline: none;
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px #dbeafe;
+  background: #fff;
+}
+
+.quick-stop-list {
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.quick-stop-item {
+  display: block;
+  width: 100%;
+  padding: 0.55rem 1.1rem;
+  background: none;
+  border: none;
+  border-bottom: 1px solid #f8fafc;
+  text-align: left;
+  font-size: 0.85rem;
+  color: #1e293b;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.quick-stop-item:hover { background: #eff6ff; color: #1d4ed8; }
+.quick-stop-empty { padding: 0.75rem 1.1rem; font-size: 0.82rem; color: #94a3b8; }
+
+/* Empty state */
+.transport-empty {
+  padding: 1.5rem 1.25rem;
+  text-align: center;
+}
+
+.transport-pick-btn {
+  background: none;
+  border: 1.5px dashed #c7d2fe;
+  border-radius: 10px;
+  padding: 0.5rem 0.75rem;
+  color: #4f46e5;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  text-align: center;
+}
+
+.transport-pick-btn:hover { background: #eef2ff; }
+
+/* Departures list */
+.transport-deps {
+  display: flex;
+  flex-direction: column;
+}
+
+.transport-dep-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid #f8fafc;
+  font-size: 0.85rem;
+}
+
+.transport-dep-row:last-child { border-bottom: none; }
+
+.transport-dep-time {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 1rem;
+  color: #0f172a;
+  min-width: 42px;
+}
+
+.transport-dep-route {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 600;
+  color: #4f46e5;
+  white-space: nowrap;
+}
+
+.transport-cat-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #fff;
+  padding: 0.12rem 0.35rem;
+  border-radius: 3px;
+  letter-spacing: 0.03em;
+}
+
+.transport-dep-head {
+  flex: 1;
+  color: #374151;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.transport-dep-delay {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #dc2626;
+  background: #fee2e2;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+/* ── Pociągi — karty poziome ─────────────────────────── */
+.train-deps-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  padding: 0.25rem 0 0.5rem;
+}
+
+.train-dep-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.85rem 1.25rem;
+  border-right: 1px solid #f1f5f9;
+}
+
+.train-dep-card:last-child { border-right: none; }
+
+.train-dep-card-time {
+  font-size: 1.6rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.train-dep-card-route {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 700;
+  color: #4f46e5;
+  font-size: 0.88rem;
+}
+
+.train-dep-card-dest {
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: #1e293b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.train-dep-card-platform {
+  font-size: 0.72rem;
+  color: #3b82f6;
+  font-weight: 600;
+}
+
+@media (max-width: 760px) {
+  .train-deps-row { grid-template-columns: 1fr; }
+  .train-dep-card { border-right: none; border-bottom: 1px solid #f1f5f9; }
+  .train-dep-card:last-child { border-bottom: none; }
+  .bus-slots { grid-template-columns: 1fr; }
+  .bus-slot-divider { width: auto; height: 1px; margin: 0; }
 }
