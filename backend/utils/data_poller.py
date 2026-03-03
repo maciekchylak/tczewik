@@ -9,7 +9,6 @@ Interwały:
 import logging
 import threading
 import time
-from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -67,34 +66,11 @@ def _save_ckis() -> None:
     write_cache_bg("ckis_events", _fetch_ckis_events())
 
 
-# ── Schedules (trains + buses) ────────────────────────────────────────────────
+# ── Schedules (buses) ─────────────────────────────────────────────────────────
 
 def _save_schedules() -> None:
     from utils.cache_db import write_cache_bg
-    from utils.gtfs import bus_data, rt_updates, train_data
-
-    if train_data.loaded:
-        now_sec = (
-            datetime.now().hour * 3600
-            + datetime.now().minute * 60
-            + datetime.now().second
-        )
-        result = []
-        for d in train_data.departures:
-            delay_sec = rt_updates.get_delay(d["trip_id"], train_data.tczew_ids)
-            delay_min = round(delay_sec / 60) if delay_sec is not None else None
-            result.append({
-                "time":          d["time"],
-                "time_sec":      d["time_sec"],
-                "number":        d["number"],
-                "train_name":    d["train_name"],
-                "route":         d["route"],
-                "headsign":      d["headsign"],
-                "operator":      d["operator"],
-                "delay_minutes": delay_min,
-            })
-        write_cache_bg("trains_all", result)
-        logger.debug("Saved %d train departures to cache", len(result))
+    from utils.gtfs import bus_data
 
     if bus_data.loaded:
         write_cache_bg("buses_departures", bus_data.departures)
@@ -102,15 +78,32 @@ def _save_schedules() -> None:
         logger.debug("Saved bus data to cache")
 
 
+# ── PKP PLK trains ─────────────────────────────────────────────────────────────
+
+def _pkp_daily() -> None:
+    from utils.pkp_trains import load_pkp_daily
+    load_pkp_daily()
+
+
+def _pkp_rt() -> None:
+    from utils.pkp_trains import refresh_pkp_rt
+    refresh_pkp_rt()
+
+
 # ── Public API ────────────────────────────────────────────────────────────────
 
 def start_pollers() -> None:
     """Startuje wszystkie wątki pollujące dane. Wywoływać raz przy starcie."""
-    _run_every(3600,     _save_weather,   "poll-weather")
-    _run_every(3600,     _save_water,     "poll-water")
-    _run_every(3600,     _save_air,       "poll-air")
-    _run_every(6 * 3600, _save_events,     "poll-events")
-    _run_every(6 * 3600, _save_tcz_events, "poll-tcz-events")
-    _run_every(2 * 3600, _save_ckis,       "poll-ckis")
-    _run_every(120,      _save_schedules,  "poll-schedules")
-    logger.info("Data pollers started (weather/water/air@1h, events@6h, tcz@6h, ckis@2h, schedules@2min)")
+    _run_every(3600,      _save_weather,   "poll-weather")
+    _run_every(3600,      _save_water,     "poll-water")
+    _run_every(3600,      _save_air,       "poll-air")
+    _run_every(6 * 3600,  _save_events,    "poll-events")
+    _run_every(6 * 3600,  _save_tcz_events, "poll-tcz-events")
+    _run_every(2 * 3600,  _save_ckis,      "poll-ckis")
+    _run_every(120,       _save_schedules, "poll-schedules")
+    _run_every(24 * 3600, _pkp_daily,      "poll-pkp-daily")
+    _run_every(300,       _pkp_rt,         "poll-pkp-rt")
+    logger.info(
+        "Data pollers started (weather/water/air@1h, events@6h, tcz@6h, ckis@2h, "
+        "buses@2min, pkp-schedule@24h, pkp-rt@5min)"
+    )

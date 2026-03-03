@@ -5,7 +5,8 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from utils.cache_db import read_cache
-from utils.gtfs import bus_data, rt_updates, train_data
+from utils.gtfs import bus_data
+from utils.pkp_trains import pkp_store
 
 router = APIRouter()
 
@@ -75,68 +76,26 @@ def get_bus_departures(
 
 
 @router.get("/trains/departures")
-def get_train_departures(
-    limit: int = Query(60),
-    db: Session = Depends(get_db),
-):
-    if not train_data.loaded:
-        cached, _ = read_cache(db, "trains_all")
-        if cached is not None:
-            now = _now_sec()
-            departed = [d for d in cached if d["time_sec"] < now][-2:]
-            upcoming = [d for d in cached if d["time_sec"] >= now][:limit]
-            return [
-                {
-                    "time":          d["time"],
-                    "number":        d["number"],
-                    "train_name":    d["train_name"],
-                    "route":         d["route"],
-                    "headsign":      d["headsign"],
-                    "operator":      d["operator"],
-                    "delay_minutes": d.get("delay_minutes"),
-                    "departed":      d["time_sec"] < now,
-                }
-                for d in departed + upcoming
-            ]
-        raise HTTPException(503, detail=train_data.error or "Dane kolejowe jeszcze się ładują")
-
-    now = _now_sec()
-    all_deps = train_data.departures
-    departed = [d for d in all_deps if d["time_sec"] < now][-2:]
-    upcoming = [d for d in all_deps if d["time_sec"] >= now][:limit]
-
-    result = []
-    for d in departed + upcoming:
-        delay_sec = rt_updates.get_delay(d["trip_id"], train_data.tczew_ids)
-        delay_min = round(delay_sec / 60) if delay_sec is not None else None
-        result.append({
-            "time":          d["time"],
-            "number":        d["number"],
-            "train_name":    d["train_name"],
-            "route":         d["route"],
-            "headsign":      d["headsign"],
-            "operator":      d["operator"],
-            "delay_minutes": delay_min,
-            "departed":      d["time_sec"] < now,
-        })
-
-    return result
+def get_train_departures(limit: int = Query(60)):
+    if not pkp_store.loaded:
+        raise HTTPException(503, detail=pkp_store.error or "Dane PKP jeszcze się ładują")
+    return pkp_store.get_departures(limit)
 
 
 @router.get("/status")
 def get_status():
-    rt_updates._refresh()
+    with pkp_store._lock:
+        pkp_loaded        = pkp_store.loaded
+        pkp_error         = pkp_store.error
+        pkp_schedule_cnt  = len(pkp_store.schedule)
+        pkp_rt_cnt        = len(pkp_store.rt)
     return {
         "buses": {"loaded": bus_data.loaded, "error": bus_data.error},
         "trains": {
-            "loaded": train_data.loaded,
-            "error": train_data.error,
-            "count": len(train_data.departures),
-            "tczew_stop_ids": list(train_data.tczew_ids),
-        },
-        "rt": {
-            "trip_updates_count": len(rt_updates._delays),
-            "sample_trip_ids_static": [d["trip_id"] for d in train_data.departures[:3]],
-            "sample_trip_ids_rt": list(rt_updates._delays.keys())[:3],
+            "source":         "PKP PLK API",
+            "loaded":         pkp_loaded,
+            "error":          pkp_error,
+            "schedule_count": pkp_schedule_cnt,
+            "rt_count":       pkp_rt_cnt,
         },
     }

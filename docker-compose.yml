@@ -24,6 +24,7 @@ services:
       - TZ=Europe/Warsaw
       - ADMIN_LOGIN=admin
       - ADMIN_PASSWORD=admin123
+      - PKP_API_KEY=XrRMXOBa5YBQ7m92d8syNCRJPRRm3lfK5zKaF1rGyqIX84CukvkwOpRnCSu53R4p1VSmOLOTfkrOn63P0pimnw
       # - REPORTS_S3_BUCKET=nazwa-twojego-bucketa
 
   mariadb:

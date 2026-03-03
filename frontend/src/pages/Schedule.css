@@ -175,7 +175,14 @@
 .trains-full-table {
   margin: 0 1.25rem 1.25rem;
   width: calc(100% - 2.5rem);
+  table-layout: fixed;
 }
+
+.trains-full-table .col-time      { width: 62px; }
+.trains-full-table .col-train     { width: 150px; }
+.trains-full-table .col-direction { /* reszta miejsca */ }
+.trains-full-table .col-platform  { width: 120px; }
+.trains-full-table .col-delay     { width: 100px; }
 
 /* Next upcoming */
 tr.next td          { background: #eff6ff; }
@@ -205,7 +212,6 @@ tr.row-departed .t-time { text-decoration: line-through; color: #94a3b8; }
   gap: 0.15rem;
   color: #7c3aed;
   font-weight: 700;
-  white-space: nowrap;
 }
 
 .train-name-sub {
@@ -219,10 +225,11 @@ tr.row-departed .t-time { text-decoration: line-through; color: #94a3b8; }
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
+  min-width: 0;
 }
 
-.t-headsign-main { color: #1e293b; font-weight: 500; }
-.t-route-sub     { font-size: 0.73rem; color: #94a3b8; }
+.t-headsign-main { color: #1e293b; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.t-route-sub     { font-size: 0.73rem; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ── Operator badge ──────────────────────────────────── */
 .operator-badge {
@@ -326,3 +333,41 @@ tr.row-departed .t-time { text-decoration: line-through; color: #94a3b8; }
   color: #94a3b8;
   font-size: 0.85rem;
 }
+
+/* ── PKP train category badge ────────────────────────── */
+.train-number-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.train-category-badge {
+  display: inline-block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  color: #fff;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+/* ── Platform badge ──────────────────────────────────── */
+.t-platform { white-space: nowrap; }
+
+.platform-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #1d4ed8;
+  background: #dbeafe;
+  border-radius: 5px;
+  padding: 0.2rem 0.5rem;
+  white-space: nowrap;
+}
+
+.t-muted { color: #cbd5e1; }
+
+/* ── Cancelled row ───────────────────────────────────── */
+tr.row-cancelled td { opacity: 0.5; }
+tr.row-cancelled .t-time { text-decoration: line-through; color: #dc2626; }

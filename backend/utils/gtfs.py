@@ -309,29 +309,15 @@ def load_all():
 
 def reload_loop():
     """
-    Background thread — zastępuje jednorazowe load_all():
-    - Ładuje dane przy starcie.
-    - Przy błędzie: ponawia próbę co 5 minut.
-    - Po sukcesie: czeka do północy i przeładowuje (rozkłady są dzienne).
+    Background thread — ładuje dane autobusowe (GTFS) i przeładowuje co dobę.
+    Pociągi są obsługiwane przez PKP PLK API (utils/pkp_trains.py).
     """
-    RETRY_DELAY = 5 * 60      # 5 minut między kolejnymi próbami przy błędzie
-    MIDNIGHT_BUFFER = 90      # 90 sekund po północy (GDDKiA/GTFS zazwyczaj aktualizuje ~00:00)
+    RETRY_DELAY   = 5 * 60   # 5 min przy błędzie
+    MIDNIGHT_BUFFER = 90     # 90 s po północy
 
     while True:
         if not bus_data.loaded:
             bus_data.load()
-
-        if not train_data.loaded:
-            train_data.load()
-
-        if not train_data.loaded:
-            logger.warning(
-                "Dane kolejowe niedostępne (%s) — ponowna próba za %d min.",
-                train_data.error, RETRY_DELAY // 60,
-            )
-            time_module.sleep(RETRY_DELAY)
-            train_data.error = None   # reset — pozwól load() spróbować od nowa
-            continue
 
         if not bus_data.loaded:
             logger.warning(
@@ -342,17 +328,12 @@ def reload_loop():
             bus_data.error = None
             continue
 
-        # Oba załadowane — uśpij do następnej północy.
+        # Załadowane — uśpij do następnej północy.
         now = datetime.now()
         next_midnight = datetime.combine(now.date() + timedelta(days=1), datetime.min.time())
         sleep_sec = (next_midnight - now).total_seconds() + MIDNIGHT_BUFFER
-        logger.info(
-            "Rozkłady załadowane. Następne przeładowanie za %.1f h.", sleep_sec / 3600
-        )
+        logger.info("Dane autobusowe załadowane. Następne przeładowanie za %.1f h.", sleep_sec / 3600)
         time_module.sleep(sleep_sec)
 
-        # Reset przed codziennym przeładowaniem.
-        train_data.loaded = False
-        train_data.error = None
         bus_data.loaded = False
         bus_data.error = None
