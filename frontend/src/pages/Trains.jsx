@@ -60,8 +60,14 @@ export default function Trains() {
   const [initialLoading, setInitialLoading] = useState(_cache.data.length === 0)
   const [refreshing, setRefreshing]   = useState(false)
   const [error, setError]             = useState(null)
+  const [selected, setSelected]       = useState(null) // kliknięty pociąg
   const mountedRef = useRef(true)
   const timeAgo = useTimeAgo(lastRefresh)
+
+  const handleRowClick = (d) => {
+    if (!d.disruption) return
+    setSelected(prev => prev?.departure_time === d.departure_time && prev?.number === d.number ? null : d)
+  }
 
   useEffect(() => {
     mountedRef.current = true
@@ -128,6 +134,7 @@ export default function Trains() {
             <colgroup>
               <col className="col-time" />
               <col className="col-train" />
+              <col className="col-warn" />
               <col className="col-direction" />
               <col className="col-platform" />
               <col className="col-delay" />
@@ -136,48 +143,69 @@ export default function Trains() {
               <tr>
                 <th>Godz.</th>
                 <th>Pociąg</th>
+                <th></th>
                 <th>Kierunek</th>
                 <th>Peron / Tor</th>
                 <th>Opóźnienie</th>
               </tr>
             </thead>
             <tbody>
-              {departures.map((d, i) => (
-                <tr
-                  key={i}
-                  className={[
-                    d.departed  ? 'row-departed'  : '',
-                    d.cancelled ? 'row-cancelled' : '',
-                    i === nextIdx ? 'next' : '',
-                  ].filter(Boolean).join(' ')}
-                >
-                  <td className="t-time">{d.departure_time}</td>
-                  <td>
-                    <div className="t-number">
-                      <div className="train-number-wrap">
-                        <CategoryBadge category={d.category} label={d.category_label} />
-                        <span>{d.number}</span>
-                      </div>
-                      {d.name && <span className="train-name-sub">{d.name}</span>}
-                    </div>
-                  </td>
-                  <td>
-                    <div className="t-route-train">
-                      <span className="t-headsign-main">{d.destination || '—'}</span>
-                      {d.origin && <span className="t-route-sub">z: {d.origin}</span>}
-                    </div>
-                  </td>
-                  <td>
-                    {d.platform
-                      ? <span className="platform-badge">peron {d.platform}{d.track ? `, tor ${d.track}` : ''}</span>
-                      : <span className="t-muted">—</span>
-                    }
-                  </td>
-                  <td>
-                    <DelayBadge minutes={d.delay_minutes} cancelled={d.cancelled} />
-                  </td>
-                </tr>
-              ))}
+              {departures.map((d, i) => {
+                const isOpen = selected?.departure_time === d.departure_time && selected?.number === d.number
+                return (
+                  <>
+                    <tr
+                      key={i}
+                      className={[
+                        d.departed   ? 'row-departed'       : '',
+                        d.cancelled  ? 'row-cancelled'      : '',
+                        i === nextIdx ? 'next'              : '',
+                        d.disruption ? 'row-has-disruption' : '',
+                        isOpen       ? 'row-expanded'       : '',
+                      ].filter(Boolean).join(' ')}
+                      onClick={() => handleRowClick(d)}
+                    >
+                      <td className="t-time">{d.departure_time}</td>
+                      <td>
+                        <div className="t-number">
+                          <div className="train-number-wrap">
+                            <CategoryBadge category={d.category} label={d.category_label} />
+                            <span>{d.number}</span>
+                          </div>
+                          {d.name && <span className="train-name-sub">{d.name}</span>}
+                        </div>
+                      </td>
+                      <td className="col-warn-cell">
+                        {d.disruption && <span className="disruption-icon">⚠</span>}
+                      </td>
+                      <td>
+                        <div className="t-route-train">
+                          <span className="t-headsign-main">{d.destination || '—'}</span>
+                          {d.origin && <span className="t-route-sub">z: {d.origin}</span>}
+                        </div>
+                      </td>
+                      <td>
+                        {d.platform
+                          ? <span className="platform-badge">peron {d.platform}{d.track ? `, tor ${d.track}` : ''}</span>
+                          : <span className="t-muted">—</span>
+                        }
+                      </td>
+                      <td>
+                        <DelayBadge minutes={d.delay_minutes} cancelled={d.cancelled} />
+                      </td>
+                    </tr>
+                    {d.disruption && (
+                      <tr key={`${i}-disruption`} className={`disruption-row ${isOpen ? 'disruption-row--open' : ''}`}>
+                        <td colSpan={6}>
+                          <div className="disruption-row-inner">
+                            ⚠️ {d.disruption}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
+                )
+              })}
             </tbody>
           </table>
         )}
@@ -186,6 +214,7 @@ export default function Trains() {
           <div className="panel-empty">Brak danych o pociągach na dziś.</div>
         )}
       </div>
+
     </div>
   )
 }

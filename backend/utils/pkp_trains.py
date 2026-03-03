@@ -10,6 +10,7 @@ Auth: Authorization: Bearer <PKP_API_KEY>
 """
 import logging
 import os
+import re
 import threading
 from datetime import date, datetime
 
@@ -59,14 +60,15 @@ class PKPTrainStore:
     """
 
     def __init__(self):
-        self._lock     = threading.Lock()
-        self.schedule  : dict[int, dict] = {}
-        self.routes    : dict[int, dict] = {}
-        self.rt        : dict[int, dict] = {}
-        self.stations  : dict[str, str]  = {}
-        self.loaded    = False
-        self.error     : str | None      = None
-        self._load_date: str | None      = None
+        self._lock        = threading.Lock()
+        self.schedule     : dict[int, dict] = {}
+        self.routes       : dict[int, dict] = {}
+        self.rt           : dict[int, dict] = {}
+        self.stations     : dict[str, str]  = {}
+        self.disruptions  : dict[int, str]  = {}  # orderId → message
+        self.loaded       = False
+        self.error        : str | None      = None
+        self._load_date   : str | None      = None
 
     # ── Internal HTTP ──────────────────────────────────────────────────────────
 
@@ -171,6 +173,32 @@ class PKPTrainStore:
             self.stations = station_names
         logger.info("PKP: wyciągnięto trasy dla %d/%d pociągów", len(routes), len(schedule_ids))
 
+    # ── Disruptions (raz dziennie) ────────────────────────────────────────────
+
+    def load_disruptions(self) -> None:
+        """Pobiera zakłócenia i buduje mapę orderId → treść komunikatu."""
+        logger.info("PKP: pobieranie zakłóceń...")
+        try:
+            data = self._get("/disruptions", {"pageSize": 2000})
+        except Exception as e:
+            logger.warning("PKP: disruptions fetch failed: %s", e)
+            return
+
+        disruptions: dict[int, str] = {}
+        for item in data.get("disruptions", []):
+            msg = item.get("message", "").strip()
+            # Odrzuć puste, zbyt krótkie i ID-like kody (np. "utr_55", "uu_123")
+            if not msg or len(msg) < 15 or not re.search(r'\s', msg):
+                continue
+            for route in item.get("affectedRoutes", []):
+                oid = route.get("orderId")
+                if oid and oid not in disruptions:
+                    disruptions[oid] = msg
+
+        with self._lock:
+            self.disruptions = disruptions
+        logger.info("PKP: załadowano zakłócenia dla %d pociągów", len(disruptions))
+
     # ── Real-time (co 5 minut) ────────────────────────────────────────────────
 
     def refresh_rt(self) -> None:
@@ -217,9 +245,10 @@ class PKPTrainStore:
         now_str = datetime.now().strftime("%H:%M:%S")
 
         with self._lock:
-            schedule = dict(self.schedule)
-            routes   = dict(self.routes)
-            rt       = dict(self.rt)
+            schedule     = dict(self.schedule)
+            routes       = dict(self.routes)
+            rt           = dict(self.rt)
+            disruptions  = dict(self.disruptions)
 
         result = []
         for oid, info in schedule.items():
@@ -260,6 +289,7 @@ class PKPTrainStore:
                 "confirmed":       confirmed,
                 "actual_departure": actual_dep,
                 "departed":        dep_time[:5] < now_str[:5] and status in ("C", "F", "P"),
+                "disruption":      disruptions.get(oid),
             })
 
         result.sort(key=lambda x: x["departure_time"])
@@ -275,7 +305,7 @@ pkp_store = PKPTrainStore()
 
 
 def load_pkp_daily() -> None:
-    """Pełne załadowanie danych dziennych: schedule + trasy."""
+    """Pełne załadowanie danych dziennych: schedule + trasy + zakłócenia."""
     try:
         pkp_store.load_schedule()
     except Exception as e:
@@ -286,6 +316,10 @@ def load_pkp_daily() -> None:
         pkp_store.load_routes_from_operations()
     except Exception as e:
         logger.warning("PKP routes load failed (non-fatal): %s", e)
+    try:
+        pkp_store.load_disruptions()
+    except Exception as e:
+        logger.warning("PKP disruptions load failed (non-fatal): %s", e)
 
 
 def refresh_pkp_rt() -> None:
