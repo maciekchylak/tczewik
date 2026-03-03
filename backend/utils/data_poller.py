@@ -55,6 +55,18 @@ def _save_events() -> None:
     write_cache_bg("events", _fetch_events())
 
 
+def _save_tcz_events() -> None:
+    from routers.events import _fetch_tcz_events
+    from utils.cache_db import write_cache_bg
+    write_cache_bg("tcz_events", _fetch_tcz_events())
+
+
+def _save_ckis() -> None:
+    from routers.events import _fetch_ckis_events
+    from utils.cache_db import write_cache_bg
+    write_cache_bg("ckis_events", _fetch_ckis_events())
+
+
 # ── Schedules (trains + buses) ────────────────────────────────────────────────
 
 def _save_schedules() -> None:
@@ -97,6 +109,8 @@ def start_pollers() -> None:
     _run_every(3600,     _save_weather,   "poll-weather")
     _run_every(3600,     _save_water,     "poll-water")
     _run_every(3600,     _save_air,       "poll-air")
-    _run_every(6 * 3600, _save_events,    "poll-events")
-    _run_every(120,      _save_schedules, "poll-schedules")
-    logger.info("Data pollers started (weather/water/air@1h, events@6h, schedules@2min)")
+    _run_every(6 * 3600, _save_events,     "poll-events")
+    _run_every(6 * 3600, _save_tcz_events, "poll-tcz-events")
+    _run_every(2 * 3600, _save_ckis,       "poll-ckis")
+    _run_every(120,      _save_schedules,  "poll-schedules")
+    logger.info("Data pollers started (weather/water/air@1h, events@6h, tcz@6h, ckis@2h, schedules@2min)")

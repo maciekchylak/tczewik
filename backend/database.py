@@ -5,7 +5,7 @@ Tabele tworzone automatycznie przy starcie aplikacji (create_all).
 import os
 from datetime import datetime
 from sqlalchemy import (
-    Column, DateTime, Float, Integer, String, Text,
+    Column, DateTime, Float, Integer, String, Text, UniqueConstraint,
     create_engine, func,
 )
 from sqlalchemy.orm import declarative_base, sessionmaker
@@ -55,6 +55,19 @@ class Vote(Base):
     __table_args__ = (
         # unikalność: jeden hash = jeden głos per zgłoszenie
         __import__("sqlalchemy").UniqueConstraint("report_id", "client_hash", name="uq_vote"),
+    )
+
+
+class EventVote(Base):
+    """Głosy na wydarzenia — jeden głos per client_hash per event_hash (toggle)."""
+    __tablename__ = "event_votes"
+
+    id          = Column(Integer, primary_key=True, autoincrement=True)
+    event_hash  = Column(String(64), nullable=False, index=True)
+    client_hash = Column(String(64), nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("event_hash", "client_hash", name="uq_event_vote"),
     )
 
 
